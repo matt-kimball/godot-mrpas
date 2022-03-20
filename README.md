@@ -6,8 +6,12 @@ are in the player's field of view.  This project implements that algorithm
 in GDScript (for use in the Godot game engine) and adds a demo project
 to show it in use.
 
+![screenshot](screenshot/screenshot.png)
+
 For a description of the algorithm, see
 [the overview on RogueBasin](http://www.roguebasin.com/index.php?title=Restrictive_Precise_Angle_Shadowcasting).
+
+[A live web build of this project can be found on itch.io.](https://mkimball.itch.io/godot-mrpas-demo)
 
 # Usage
 
@@ -43,3 +47,7 @@ The demo project includes
 [the Inconsolata font by Raph Levien](https://levien.com/type/myfonts/inconsolata.html).
 
 It is available under the SIL Open Font License.
+
+# License
+
+This implementation is available under the MIT License.
