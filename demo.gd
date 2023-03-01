@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 
-tool
+@tool
 extends Node2D
 
 
@@ -44,15 +44,15 @@ func _ready() -> void:
 # vi movement keys.
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		var scancode = event.scancode
+		var keycode = event.keycode
 
-		if scancode == KEY_LEFT or scancode == KEY_H or scancode == KEY_A:
+		if keycode == KEY_LEFT or keycode == KEY_H or keycode == KEY_A:
 			_move_player(Vector2(-1, 0))
-		if scancode == KEY_RIGHT or scancode == KEY_L or scancode == KEY_D:
+		if keycode == KEY_RIGHT or keycode == KEY_L or keycode == KEY_D:
 			_move_player(Vector2(1, 0))
-		if scancode == KEY_UP or scancode == KEY_K or scancode == KEY_W:
+		if keycode == KEY_UP or keycode == KEY_K or keycode == KEY_W:
 			_move_player(Vector2(0, -1))
-		if scancode == KEY_DOWN or scancode == KEY_J or scancode == KEY_S:
+		if keycode == KEY_DOWN or keycode == KEY_J or keycode == KEY_S:
 			_move_player(Vector2(0, 1))
 
 
@@ -86,12 +86,12 @@ func _populate_mrpas() -> void:
 
 	for y in range($Map.size.y):
 		for x in range($Map.size.x):
-			var position = Vector2(x, y)
-			var cell = $Map.get_cell(position)
+			var map_position = Vector2(x, y)
+			var cell = $Map.get_cell(map_position)
 
 			# Specifically check for walls and assume all other cells are
 			# transparent.
-			_mrpas.set_transparent(position, cell.terrain != '#')
+			_mrpas.set_transparent(map_position, cell.terrain != '#')
 
 
 # Recompute which map cells are visible.
@@ -106,8 +106,8 @@ func _compute_field_of_view() -> void:
 
 	for y in range($Map.size.y):
 		for x in range($Map.size.x):
-			var position = Vector2(x, y)
+			var map_position = Vector2(x, y)
 
 			# Mark the cell as visible if the shadowcasting has found it
 			# to be in view.
-			$Map.get_cell(position).in_view = _mrpas.is_in_view(position)
+			$Map.get_cell(map_position).in_view = _mrpas.is_in_view(map_position)

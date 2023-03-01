@@ -1,10 +1,10 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=3 format=3 uid="uid://bmrc18pkb1pta"]
 
-[ext_resource path="res://map.gd" type="Script" id=1]
-[ext_resource path="res://demo.gd" type="Script" id=2]
+[ext_resource type="Script" path="res://map.gd" id="1"]
+[ext_resource type="Script" path="res://demo.gd" id="2"]
 
 [node name="Demo" type="Node2D"]
-script = ExtResource( 2 )
+script = ExtResource("2")
 
 [node name="Map" type="Node2D" parent="."]
-script = ExtResource( 1 )
+script = ExtResource("1")

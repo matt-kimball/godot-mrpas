@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 
-tool
+@tool
 extends Node2D
 
 
@@ -65,13 +65,13 @@ func _ready() -> void:
 
 # Return the map cell node for a particular map cell coordinate.
 # Returns null if the requested cell is outside the bounds of the map.
-func get_cell(position: Vector2) -> MapCell:
-	if position.x < 0 or position.x >= size.x:
+func get_cell(map_position: Vector2) -> MapCell:
+	if map_position.x < 0 or map_position.x >= size.x:
 		return null
-	if position.y < 0 or position.y >= size.y:
+	if map_position.y < 0 or map_position.y >= size.y:
 		return null
 
-	return _cells[position.y as int][position.x as int]
+	return _cells[map_position.y as int][map_position.x as int]
 
 
 # Generate all cells by instancing the map cell scene.
@@ -80,11 +80,11 @@ func _generate_cells() -> void:
 		var row = []
 
 		for x in range(size.x):
-			var position = Vector2(
+			var pixel_position = Vector2(
 				MapCell.pixel_size.x * x, MapCell.pixel_size.y * y)
 
-			var cell = preload("res://map_cell.tscn").instance()
-			cell.transform = Transform2D.translated(position)
+			var cell = preload("res://map_cell.tscn").instantiate()
+			cell.transform = Transform2D().translated(pixel_position)
 			add_child(cell)
 
 			row.push_back(cell)

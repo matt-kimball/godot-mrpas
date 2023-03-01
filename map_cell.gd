@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 
-tool
+@tool
 class_name MapCell
 extends Node2D
 
@@ -44,16 +44,16 @@ var in_view = true
 func _process(_delta) -> void:
 	# Change colors if the map cell is in the field of view.
 	if in_view:
-		$Glyph.add_color_override("font_color", Color("ffffff"))
+		$Glyph.add_theme_color_override("font_color", Color("ffffff"))
 		$Background.color = Color("003f7f")
 	else:
-		$Glyph.add_color_override("font_color", Color("5f5f5f"))
+		$Glyph.add_theme_color_override("font_color", Color("5f5f5f"))
 		$Background.color = Color("000000")
 
 	# If a character is in the cell, override the terrain glyph
 	# using the character's glyph.
 	if character:
 		$Glyph.text = character
-		$Glyph.add_color_override("font_color", Color("ffff00"))
+		$Glyph.add_theme_color_override("font_color", Color("ffff00"))
 	else:
 		$Glyph.text = terrain

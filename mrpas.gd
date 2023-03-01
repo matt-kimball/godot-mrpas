@@ -20,7 +20,7 @@
 
 
 class_name MRPAS
-extends Reference
+extends RefCounted
 
 
 # An implementation of Mingos' Restrictive Precise Angle Shadowcasting.
