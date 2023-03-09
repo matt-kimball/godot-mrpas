@@ -31,6 +31,7 @@ extends Node2D
 var _player_position: Vector2 = Vector2(0, 2)
 # The shadowcasting algorithm used for visibility checks.
 var _mrpas: MRPAS
+var _worst_fov_time
 
 
 # Place the player's symbol on the map and check initial visibility.
@@ -75,8 +76,18 @@ func _move_player(direction: Vector2) -> void:
 	_player_position = destination
 	destination_cell.character = '@'
 
+	var start_time = Time.get_ticks_usec()
 	# Recompute visibility for the new position.
 	_compute_field_of_view()
+	var end_time = Time.get_ticks_usec()
+
+	if OS.is_debug_build():
+		var fov_time = (end_time - start_time) / 1000.0
+		if _worst_fov_time == null or fov_time > _worst_fov_time:
+			_worst_fov_time = fov_time
+
+		$PerformaceLabel.text = "compute fov: %0.3f ms / worst: %0.3f ms" % \
+			[fov_time, _worst_fov_time]
 
 
 # Populate the shadowcasting algorithm with transparent / occluded cells

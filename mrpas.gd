@@ -132,29 +132,47 @@ func _compute_octant(
 
 	# Track occluders previously encountered in this octant.
 	var occluders = []
+	var new_occluders = []
 
 	# Iterate along the major axis.
 	for major in range(max_distance + 1):
 		var any_transparent = false
-		var new_occluders = []
+
+		var position = view_position + _octant_to_offset(
+			axis, major_sign * major, 0)
+		if not _in_bounds(position):
+			break
+
+		var position_delta = _octant_to_offset(axis, 0, minor_sign)
+
+		# Clamp the iteration range to the map bounds, which allows us to skip
+		# bounds check in the inner loop.
+		var clamped_minor = _clamp_to_map_bounds(position, position_delta, major + 1)
+
+		var angle_half_step = 0.5 / (major + 1) as float
 
 		# Iterate along the minor axis, but not beyond the major axis distance.
-		for minor in range(major + 1):
+		for minor in range(clamped_minor):
+			# It is important to recompute angle each iteration, because the
+			# alternative approach of accumulating angle_half_step introduces
+			# noticible artifacts due to accumulation of floating point
+			# precision error.
+			var angle = minor as float / (major + 1) as float
 
-			# Convert from octant coordinates to (x, y) map coordinates.
-			var offset = _octant_to_offset(
-				axis, major_sign * major, minor_sign * minor)
-			var position = view_position + offset
-
-			var transparent = is_transparent(position)
+			var transparent = _is_transparent_no_bounds(position)
 
 			# Check if occluders found on previous lines block this cell.
-			if not _is_occluded(occluders, major, minor, transparent):
-				set_in_view(position, true)
+			if not _is_occluded(occluders, angle, angle_half_step, transparent):
+				_set_in_view_no_bounds(position, true)
 				if transparent:
 					any_transparent = true
 				else:
-					new_occluders.push_back(_occluder_from_coord(major, minor))
+					# The occluder represents a range of angle values, rather
+					# than a coordinate.
+					var occluder = Vector2(angle, angle + 2.0 * angle_half_step)
+					new_occluders.push_back(occluder)
+
+			position += position_delta
 
 		# If no tranparent cells were seen on this line, we can stop.
 		if not any_transparent:
@@ -163,6 +181,28 @@ func _compute_octant(
 		# Add any occluders we encountered on this line for checking
 		# future lines.
 		occluders = occluders + new_occluders
+		new_occluders.clear()
+
+
+# Clamp the range of iteration to the bounds of the map.  This returns a
+# new maximum number of iterations, such that the iteration is entirely
+# within the boundary of the map.
+func _clamp_to_map_bounds(
+	position: Vector2,
+	position_delta: Vector2,
+	iterations: int) -> int:
+
+	if position.x + position_delta.x * iterations < 0:
+		iterations = int(-position.x / position_delta.x) + 1
+	if position.x + position_delta.x * iterations > _size.x:
+		iterations = int((_size.x - position.x) / position_delta.x)
+
+	if position.y + position_delta.y * iterations < 0:
+		iterations = int(-position.y / position_delta.y) + 1
+	if position.y + position_delta.y * iterations > _size.y:
+		iterations = int((_size.y - position.y) / position_delta.y)
+
+	return iterations
 
 
 # Returns true if a cell within the quadrant should not be considered within
@@ -175,13 +215,13 @@ func _compute_octant(
 # three tested points.
 func _is_occluded(
 		occluders: Array,
-		major: int,
-		minor: int,
+		angle: float,
+		angle_half_step: float,
 		transparent: bool) -> bool:
 
-	var begin = _is_angle_occluded(occluders, _octant_angle(major, minor, 0.0))
-	var mid = _is_angle_occluded(occluders, _octant_angle(major, minor, 0.5))
-	var end = _is_angle_occluded(occluders, _octant_angle(major, minor, 1.0))
+	var begin = _is_angle_occluded(occluders, angle)
+	var mid = _is_angle_occluded(occluders, angle + angle_half_step)
+	var end = _is_angle_occluded(occluders, angle + 2.0 * angle_half_step)
 
 	if not transparent and (not begin or not mid or not end):
 		return false
@@ -192,15 +232,6 @@ func _is_occluded(
 	return true
 
 
-# Returns an occluder representation from octant coordinates.
-# The returned Vector2 doesn't represent a coordinate in map space, but
-# rather a [begin, end] value in angle-space for the current octant.
-func _occluder_from_coord(major: int, minor: int) -> Vector2:
-	var begin = _octant_angle(major, minor, 0.0)
-	var end = _octant_angle(major, minor, 1.0)
-	return Vector2(begin, end)
-
-
 # Given a list of occluded angle ranges and an angle test test, return
 # true if the angle tested is occluded by at least one of the occluders.
 func _is_angle_occluded(occluders: Array, angle: float) -> bool:
@@ -209,16 +240,6 @@ func _is_angle_occluded(occluders: Array, angle: float) -> bool:
 			return true
 
 	return false
-
-
-# Within an octant, given a major and minor coordinate, and a fraction 
-# along the length of the cell, return an angle value in range [0, 1].
-# An angle value of 0 is that of the major axis, and an angle value
-# of 1 is the diagonal with maxiumum distance from the major axis.
-func _octant_angle(major: int, minor: int, fraction: float) -> float:
-	var begin = minor as float / (major + 1) as float
-	var end = (minor + 1) as float / (major + 1) as float
-	return lerp(begin, end, fraction)
 
 
 # Given a major axis, and offsets along the major and minor axes, return
@@ -235,3 +256,15 @@ func _in_bounds(position: Vector2) -> bool:
 	var x_in_bounds = position.x >= 0 and position.x < _size.x
 	var y_in_bounds = position.y >= 0 and position.y < _size.y
 	return x_in_bounds and y_in_bounds
+
+
+# is_transparent, but without a bounds check for use in the inner loop of
+# visibility computation.
+func _is_transparent_no_bounds(position: Vector2) -> bool:
+	return _transparent_cells[position.y][position.x]
+
+
+# set_in_view, but with no bounds check.  For use in the inner loop of
+# visibility computation.
+func _set_in_view_no_bounds(position: Vector2, in_view: bool) -> void:
+	_fov_cells[position.y][position.x] = in_view
